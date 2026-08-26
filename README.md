@@ -299,7 +299,9 @@ surface is kept focused so the index set stays small and writes stay cheap.
 
 Firestore query performance scales with the size of the result set, not the size
 of the collection, because every query is served from an index rather than by
-scanning documents. Results are paginated to keep the returned set small.
+scanning documents. The dashboard currently reads the full filtered result set on
+each load, which is fine at this catalog size; see Pagination below for the
+scaling path once that stops being true.
 
 **Summary metrics**
 
