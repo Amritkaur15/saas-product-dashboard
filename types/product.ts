@@ -48,3 +48,11 @@ export interface ProductFilters {
   sortBy?: ProductSortField;
   direction?: SortDirection;
 }
+
+// Global catalog totals, independent of any list filter — see
+// GET /api/products/metrics.
+export interface ProductMetrics {
+  total: number;
+  activeCount: number;
+  revenueTotal: number;
+}

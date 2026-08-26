@@ -1,4 +1,4 @@
-import type { Product } from "@/types/product";
+import type { ProductMetrics } from "@/types/product";
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -6,33 +6,38 @@ const currency = new Intl.NumberFormat("en-US", {
 });
 
 interface MetricsBarProps {
-  products: Product[];
+  metrics: ProductMetrics | null;
+  loading: boolean;
 }
 
 // Metrics summarize the whole catalog, independent of the list's active
-// filters. The caller passes an unfiltered product list for this reason —
-// see app/dashboard/page.tsx.
-export function MetricsBar({ products }: MetricsBarProps) {
-  const total = products.length;
-  const activeCount = products.filter((p) => p.status === "active").length;
-  const revenueTotal = products.reduce((sum, p) => sum + p.price, 0);
+// filters — computed server-side by GET /api/products/metrics (see
+// hooks/useProductMetrics.ts) rather than from a client-fetched product list.
+export function MetricsBar({ metrics, loading }: MetricsBarProps) {
+  // "—" while loading (or before the first response) rather than 0, so an
+  // empty-because-not-fetched-yet state can't be mistaken for a real answer
+  // of zero.
+  const pending = loading || !metrics;
 
-  const metrics = [
-    { label: "Total products", value: total.toLocaleString() },
-    { label: "Active products", value: activeCount.toLocaleString() },
-    { label: "Revenue total", value: currency.format(revenueTotal) },
+  const items = [
+    { label: "Total products", value: pending ? "—" : metrics.total.toLocaleString() },
+    { label: "Active products", value: pending ? "—" : metrics.activeCount.toLocaleString() },
+    {
+      label: "Revenue total",
+      value: pending ? "—" : currency.format(metrics.revenueTotal),
+    },
   ];
 
   return (
     <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      {metrics.map((metric) => (
+      {items.map((item) => (
         <div
-          key={metric.label}
+          key={item.label}
           className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
         >
-          <dt className="text-sm font-medium text-gray-500">{metric.label}</dt>
+          <dt className="text-sm font-medium text-gray-500">{item.label}</dt>
           <dd className="mt-1 text-2xl font-semibold text-gray-900">
-            {metric.value}
+            {item.value}
           </dd>
         </div>
       ))}

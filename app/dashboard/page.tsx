@@ -9,6 +9,7 @@ import { ProductList } from "@/components/products/ProductList";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { auth } from "@/lib/firebase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useProductMetrics } from "@/hooks/useProductMetrics";
 import { useProducts } from "@/hooks/useProducts";
 import type { Product, ProductFilters, ProductInput } from "@/types/product";
 
@@ -29,9 +30,9 @@ export default function DashboardPage() {
   } = useProducts(filters);
 
   // Metrics summarize the whole catalog, independent of the list's active
-  // filters, so they're backed by their own unfiltered fetch rather than
-  // the (possibly filtered) `products` above.
-  const { products: allProducts, refresh: refreshMetrics } = useProducts();
+  // filters, so they're backed by their own server-computed endpoint rather
+  // than derived from the (possibly filtered) `products` above.
+  const { metrics, loading: metricsLoading, refresh: refreshMetrics } = useProductMetrics();
 
   useEffect(() => {
     if (authLoading) return;
@@ -100,7 +101,7 @@ export default function DashboardPage() {
         </button>
       </header>
 
-      <MetricsBar products={allProducts} />
+      <MetricsBar metrics={metrics} loading={metricsLoading} />
 
       {formOpen && isAdmin && (
         <ProductForm product={editingProduct} onSubmit={handleFormSubmit} onCancel={closeForm} />

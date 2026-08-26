@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { getToken } from "@/lib/auth/client/session";
+import { useAuth } from "@/hooks/useAuth";
+import { authorizedFetch } from "@/lib/auth/client/session";
 import type { Product, ProductFilters, ProductInput } from "@/types/product";
 
 interface UseProductsResult {
@@ -12,24 +13,6 @@ interface UseProductsResult {
   createProduct: (input: ProductInput) => Promise<void>;
   updateProduct: (id: string, input: ProductInput) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
-}
-
-async function authorizedFetch(url: string, init: RequestInit = {}) {
-  const token = await getToken();
-  const headers = new Headers(init.headers);
-  headers.set("Content-Type", "application/json");
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-
-  const response = await fetch(url, { ...init, headers });
-
-  if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    throw new Error(body?.error ?? "Request failed");
-  }
-
-  return response.status === 204 ? null : response.json();
 }
 
 function buildQuery(filters: ProductFilters): string {
@@ -45,11 +28,18 @@ function buildQuery(filters: ProductFilters): string {
 // The single client-side place that calls the product API, so components
 // don't each duplicate fetch + token + loading/error plumbing.
 export function useProducts(filters: ProductFilters = {}): UseProductsResult {
+  const { user, loading: authLoading } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
+    // Firebase Auth hasn't resolved the session yet (e.g. right after a page
+    // refresh), or resolved to signed-out. Either way there's no token to
+    // attach yet, so fetching now would just 401. Bail and let the effect
+    // re-run once auth settles (see hooks/useAuth.ts's `loading` state).
+    if (authLoading || !user) return;
+
     setLoading(true);
     setError(null);
     try {
@@ -65,7 +55,7 @@ export function useProducts(filters: ProductFilters = {}): UseProductsResult {
     // Depend on primitive filter fields, not the filters object itself,
     // so a fresh object literal from the caller doesn't refetch forever.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.status, filters.category, filters.sortBy, filters.direction]);
+  }, [authLoading, user, filters.status, filters.category, filters.sortBy, filters.direction]);
 
   useEffect(() => {
     // Classic fetch-on-mount/filter-change pattern: refresh's setLoading

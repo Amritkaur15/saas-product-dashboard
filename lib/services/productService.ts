@@ -1,7 +1,7 @@
 import { NotFoundError, ValidationError } from "@/lib/errors";
 import * as productRepository from "@/lib/repositories/productRepository";
 import { productInputSchema } from "@/lib/validation/productSchema";
-import type { Product, ProductFilters, ProductInput } from "@/types/product";
+import type { Product, ProductFilters, ProductInput, ProductMetrics } from "@/types/product";
 
 function parseInput(input: unknown): Required<ProductInput> {
   const result = productInputSchema.safeParse(input);
@@ -13,6 +13,18 @@ function parseInput(input: unknown): Required<ProductInput> {
 
 export async function listProducts(filters: ProductFilters): Promise<Product[]> {
   return productRepository.findAll(filters);
+}
+
+// Global catalog totals, independent of any list filter. Reuses the same
+// unfiltered read findAll({}) already provides rather than adding a
+// dedicated repository method.
+export async function getMetrics(): Promise<ProductMetrics> {
+  const products = await productRepository.findAll({});
+  return {
+    total: products.length,
+    activeCount: products.filter((p) => p.status === "active").length,
+    revenueTotal: products.reduce((sum, p) => sum + p.price, 0),
+  };
 }
 
 export async function getProduct(id: string): Promise<Product> {
