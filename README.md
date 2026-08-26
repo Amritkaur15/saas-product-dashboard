@@ -75,6 +75,30 @@ If you do not already have a Firebase project for this app:
    Sign out and back in (or wait for the token to refresh) for the new role to take
    effect.
 
+### Deploying Firestore rules and indexes
+
+This is only needed if you're running against your own Firebase project. It is not
+needed to use the hosted app or the project already configured for this build,
+where the rules and indexes are already deployed.
+
+```bash
+npm install -g firebase-tools
+firebase login
+firebase use --add        # select your Firebase project
+firebase deploy --only firestore:indexes,firestore:rules
+```
+
+`firestore.rules`, `firestore.indexes.json`, `firebase.json`, and `.firebaserc` are
+all committed, so this recreates the exact rules and index setup with no manual
+configuration in the console.
+
+Composite indexes take a minute or two to build after deploying. Queries that need
+one will fail until it finishes.
+
+No environment variables are needed for this. The CLI authenticates with its own
+browser based Google login, separate from the app's runtime credentials in
+`.env.local`.
+
 ---
 
 ## Architecture overview
@@ -186,8 +210,7 @@ model. Instant revocation would require a per request lookup, which was not adde
   header.
 - The Admin SDK service account key is kept in an environment variable and is
   gitignored. It is never shipped to the client.
-- API errors return generic messages and correct status codes (401 / 403 / 400 /
-  404) without leaking internal details.
+- API errors return generic messages and correct status codes (401 / 403 / 400 / 404) without leaking internal details.
 - All privileged operations (token verification, role assignment) run only on the
   server with the Admin SDK.
 
@@ -245,20 +268,29 @@ and query it with `where("createdBy", "==", uid)`.
 
 **Indexing strategy**
 
-Firestore automatically creates a single field index for every field, so any query
-touching only one field works with no setup. This covers filtering by status
-alone, filtering by category alone, or sorting by price alone.
+The guiding principle is that indexes follow the queries the dashboard actually
+issues, rather than indexing every field speculatively. Indexes are not free:
+every index must be updated on each write, so more indexes mean slower writes and
+more storage. The set below is therefore kept intentional, balancing read
+flexibility against write cost.
 
-A composite index is required only when a single query combines a filter and a
-sort on different fields. Firestore does not create these automatically; the query
-fails until the index is defined. The dashboard's "active products ordered by
-price" query combines `status` and `price`, so it uses a composite index on
-`(status, price)` defined in `firestore.indexes.json`. Each additional filter plus
-sort combination would need its own composite index.
+Single-field indexes are created automatically by Firestore for every field, in
+both sort directions. These cover the simple queries: filtering by status alone,
+filtering by category alone, or sorting by a single field with no filter.
 
-> If your final dashboard never combines a filter and a sort on different fields,
-> replace the paragraph above with: queries stay single field, so automatic
-> indexes suffice and no composite indexes are defined.
+Composite indexes are required only when a query combines a filter and a sort on a
+different field, which the dashboard does (a status or category filter together
+with a sort). Firestore does not create these automatically; the query fails with
+a link to create the exact index needed. Unlike single-field indexes, a composite
+index does not serve both sort directions from one entry, so each supported
+filter-plus-sort combination has a separate ascending and descending index.
+
+To keep the index set intentional, the dashboard sorts by `price` or `createdAt`
+(the two meaningful product sorts) rather than every field, and supports status and
+category filters. The composite indexes in `firestore.indexes.json` map one to one
+to those supported combinations. Adding another sortable field or filter would add
+its own composite indexes, which is the deliberate trade being made: the query
+surface is kept focused so the index set stays small and writes stay cheap.
 
 Firestore query performance scales with the size of the result set, not the size
 of the collection, because every query is served from an index rather than by

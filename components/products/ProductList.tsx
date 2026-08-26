@@ -53,7 +53,7 @@ export function ProductList({
 
   function handleSortByChange(value: string) {
     const sortBy =
-      value === "name" || value === "price" || value === "createdAt"
+      value === "price" || value === "createdAt"
         ? (value as ProductSortField)
         : undefined;
     onFiltersChange({ ...filters, sortBy });
@@ -133,7 +133,6 @@ export function ProductList({
             className="rounded-md border border-gray-300 px-2 py-1.5 text-sm"
           >
             <option value="createdAt">Date created</option>
-            <option value="name">Name</option>
             <option value="price">Price</option>
           </select>
         </div>
