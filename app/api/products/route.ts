@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { requireAuth, requireRole } from "@/lib/auth/server/middleware";
 import { handleError } from "@/lib/errors";
 import * as productService from "@/lib/services/productService";
-import type { ProductFilters } from "@/types/product";
+import { PRODUCT_CATEGORIES } from "@/types/product";
+import type { ProductCategory, ProductFilters } from "@/types/product";
+
+function isProductCategory(value: string): value is ProductCategory {
+  return (PRODUCT_CATEGORIES as readonly string[]).includes(value);
+}
 
 function parseFilters(searchParams: URLSearchParams): ProductFilters {
   const filters: ProductFilters = {};
@@ -13,7 +18,7 @@ function parseFilters(searchParams: URLSearchParams): ProductFilters {
   }
 
   const category = searchParams.get("category");
-  if (category) {
+  if (category && isProductCategory(category)) {
     filters.category = category;
   }
 

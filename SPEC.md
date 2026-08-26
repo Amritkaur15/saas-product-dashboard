@@ -287,6 +287,10 @@ form for inline feedback, but that is UX only and never replaces the server chec
 ### 2.3 Dashboard and data display
 - Responsive dashboard page listing products.
 - Filter (by status and by category) and sort (by at least price and createdAt).
+  Category filtering and the create/edit form both read from the same fixed,
+  hardcoded category list (see section 3 and the README's Categories section)
+  rather than accepting free text, so create options and filter options never
+  drift apart.
   The API and `ProductSortField` type also allow sorting by name; the dashboard UI
   intentionally exposes only price and createdAt, to keep the composite index set
   small and deliberate rather than indexing every field speculatively (see the
@@ -306,7 +310,7 @@ form for inline feedback, but that is UX only and never replaces the server chec
 ```
 products/{productId}            (auto-generated id)
   name: string
-  category: string
+  category: string               (one of a fixed set — see below)
   price: number                 (integer or float; document as a plain number)
   status: "active" | "inactive"
   createdAt: Timestamp
@@ -318,6 +322,10 @@ users/{uid}                     (id = Firebase Auth uid)
   createdAt: Timestamp
 ```
 
+- `category` is constrained to a fixed, hardcoded list (`PRODUCT_CATEGORIES` in
+  `types/product.ts`), not free text, and is validated as an enum by the Zod
+  schema. See the README's Database design (Categories) section for the rationale
+  and the escalation path to a managed `categories` collection.
 - Do NOT add `tenantId`, `createdBy`, or ownership fields. These are documented as
   future extensions only.
 - Keep both collections flat and top level.
@@ -345,7 +353,8 @@ Three layers. Data flows one direction. Enforce the boundaries.
 - `listProducts(filters)`, `createProduct(input)`, `updateProduct(id, input)`,
   `deleteProduct(id)`.
 - Validates input with the Zod schema, applies defaults (status defaults to
-  `active`), and checks existence before update (throw `NotFoundError`).
+  `active`), validates `category` against the fixed `PRODUCT_CATEGORIES` enum, and
+  checks existence before update (throw `NotFoundError`).
 
 **Route handlers — `app/api/products/route.ts` and `app/api/products/[id]/route.ts`**
 - No business logic. No Firestore imports.
@@ -439,7 +448,9 @@ brackets) is a dynamic URL segment read via the handler's `params`.
 ---
 
 ## 7. Types — `types/product.ts`
-- Export `Product`, `ProductInput`, `Role`, and any filter/sort param types.
+- Export `Product`, `ProductInput`, `Role`, `PRODUCT_CATEGORIES` /
+  `ProductCategory` (the fixed category list and its derived type), and any
+  filter/sort param types.
 - The same `Product` type is used by the repository, service, API, and UI.
 
 ---
@@ -479,6 +490,10 @@ These are future extensions. Leave clean seams (as described) but do NOT impleme
 - AI feature (product description generation or natural language search).
 - CI/CD workflow and observability tooling.
 - Product ownership / `createdBy`.
+- A managed `categories` collection (admin-editable categories with metadata like
+  display order or a description). Categories are a fixed, hardcoded list for this
+  scope; see the README's Database design (Categories) section for the escalation
+  path.
 
 Each of these must be mentioned in the README's "What's next" or scaling sections
 with a one line note on how it would slot into the existing layers.

@@ -1,14 +1,15 @@
 "use client";
 
 import { ProductRow } from "@/components/products/ProductRow";
+import { PRODUCT_CATEGORIES } from "@/types/product";
 import type {
   Product,
+  ProductCategory,
   ProductFilters,
   ProductSortField,
   ProductStatus,
   SortDirection,
 } from "@/types/product";
-import { useState } from "react";
 
 interface ProductListProps {
   products: Product[];
@@ -33,14 +34,11 @@ export function ProductList({
   onEdit,
   onDelete,
 }: ProductListProps) {
-  // Local draft so category filtering applies on submit, not per keystroke.
-  const [categoryDraft, setCategoryDraft] = useState(filters.category ?? "");
-
-  function applyCategory() {
-    onFiltersChange({
-      ...filters,
-      category: categoryDraft.trim() || undefined,
-    });
+  function handleCategoryChange(value: string) {
+    const category = (PRODUCT_CATEGORIES as readonly string[]).includes(value)
+      ? (value as ProductCategory)
+      : undefined;
+    onFiltersChange({ ...filters, category });
   }
 
   function handleStatusChange(value: string) {
@@ -89,35 +87,27 @@ export function ProductList({
           </select>
         </div>
 
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            applyCategory();
-          }}
-          className="flex items-end gap-2"
-        >
-          <div>
-            <label
-              htmlFor="filter-category"
-              className="mb-1 block text-xs font-medium text-gray-700"
-            >
-              Category
-            </label>
-            <input
-              id="filter-category"
-              value={categoryDraft}
-              onChange={(event) => setCategoryDraft(event.target.value)}
-              placeholder="e.g. Electronics"
-              className="rounded-md border border-gray-300 px-2 py-1.5 text-sm"
-            />
-          </div>
-          <button
-            type="submit"
-            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        <div>
+          <label
+            htmlFor="filter-category"
+            className="mb-1 block text-xs font-medium text-gray-700"
           >
-            Apply
-          </button>
-        </form>
+            Category
+          </label>
+          <select
+            id="filter-category"
+            value={filters.category ?? ""}
+            onChange={(event) => handleCategoryChange(event.target.value)}
+            className="rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+          >
+            <option value="">All</option>
+            {PRODUCT_CATEGORIES.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div>
           <label

@@ -1,6 +1,7 @@
 "use client";
 
-import type { Product, ProductInput, ProductStatus } from "@/types/product";
+import { PRODUCT_CATEGORIES } from "@/types/product";
+import type { Product, ProductCategory, ProductInput, ProductStatus } from "@/types/product";
 import { useState } from "react";
 
 interface ProductFormProps {
@@ -11,7 +12,9 @@ interface ProductFormProps {
 
 export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
   const [name, setName] = useState(product?.name ?? "");
-  const [category, setCategory] = useState(product?.category ?? "");
+  const [category, setCategory] = useState<ProductCategory>(
+    product?.category ?? PRODUCT_CATEGORIES[0]
+  );
   const [price, setPrice] = useState(product ? String(product.price) : "");
   const [status, setStatus] = useState<ProductStatus>(
     product?.status ?? "active"
@@ -67,13 +70,18 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
           >
             Category
           </label>
-          <input
+          <select
             id="product-category"
-            required
             value={category}
-            onChange={(event) => setCategory(event.target.value)}
+            onChange={(event) => setCategory(event.target.value as ProductCategory)}
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
+          >
+            {PRODUCT_CATEGORIES.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>

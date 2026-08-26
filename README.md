@@ -271,6 +271,24 @@ products under users or add an owner field, since no in scope feature reads it. 
 ownership were needed, I would add a `createdBy` field holding the creator's uid
 and query it with `where("createdBy", "==", uid)`.
 
+**Categories**
+
+Categories are a fixed, hardcoded list (`PRODUCT_CATEGORIES` in `types/product.ts`),
+not free text. Both the create/edit form and the dashboard's category filter read
+from this single list, so the two never drift apart. This was chosen over a
+free-text field to prevent inconsistent values (for example "cloth" vs "clothing")
+that would silently fragment filtering — free text looks fine until two admins
+spell the same category differently and neither filter finds all the matching
+products. The Zod schema validates `category` as an enum of the allowed values, so
+even a direct API call bypassing the UI cannot write an arbitrary category.
+
+Escalation path: if categories needed to be managed by non-developers without a
+redeploy, or needed metadata like display order or a description, they would move
+into a dedicated `categories` collection in Firestore, with the dropdown populated
+from it and a small admin UI to manage entries. Kept as a hardcoded list for this
+scope, since a managed categories collection would add its own CRUD surface
+(repository, service, routes) that isn't justified yet.
+
 **Indexing strategy**
 
 The guiding principle is that indexes follow the queries the dashboard actually
@@ -436,6 +454,9 @@ With more time I would add:
 - Kept the dependency set minimal: Next.js, React, Firebase client, Firebase Admin,
   and one small validation library. No state management library, ORM, or UI kit
   beyond styling.
+- Categories are a fixed hardcoded list, not free text or a managed collection.
+  Prevents inconsistent values and keeps filtering reliable; see Database design's
+  Categories section above for the escalation path.
 
 ---
 
