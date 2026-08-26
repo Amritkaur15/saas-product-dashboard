@@ -49,20 +49,26 @@ export function ProductList({
     onFiltersChange({ ...filters, status });
   }
 
-  function handleSortByChange(value: string) {
-    const sortBy =
-      value === "price" || value === "createdAt"
-        ? (value as ProductSortField)
-        : undefined;
-    onFiltersChange({ ...filters, sortBy });
+  const activeSortField = filters.sortBy ?? "createdAt";
+  const activeDirection = filters.direction ?? "desc";
+
+  // Clicking a new column sorts it ascending; clicking the active column
+  // again toggles direction. Only price/createdAt are sortable — the two
+  // fields the composite indexes in firestore.indexes.json cover.
+  function handleSort(field: ProductSortField) {
+    const direction: SortDirection =
+      activeSortField === field && activeDirection === "asc" ? "desc" : "asc";
+    onFiltersChange({ ...filters, sortBy: field, direction });
   }
 
-  function handleDirectionChange(value: string) {
-    const direction =
-      value === "asc" || value === "desc"
-        ? (value as SortDirection)
-        : undefined;
-    onFiltersChange({ ...filters, direction });
+  function ariaSortFor(field: ProductSortField): "ascending" | "descending" | "none" {
+    if (activeSortField !== field) return "none";
+    return activeDirection === "asc" ? "ascending" : "descending";
+  }
+
+  function sortIndicator(field: ProductSortField) {
+    if (activeSortField !== field) return null;
+    return <span aria-hidden="true">{activeDirection === "asc" ? "▲" : "▼"}</span>;
   }
 
   return (
@@ -109,42 +115,6 @@ export function ProductList({
           </select>
         </div>
 
-        <div>
-          <label
-            htmlFor="filter-sort"
-            className="mb-1 block text-xs font-medium text-gray-700"
-          >
-            Sort by
-          </label>
-          <select
-            id="filter-sort"
-            value={filters.sortBy ?? "createdAt"}
-            onChange={(event) => handleSortByChange(event.target.value)}
-            className="rounded-md border border-gray-300 px-2 py-1.5 text-sm"
-          >
-            <option value="createdAt">Date created</option>
-            <option value="price">Price</option>
-          </select>
-        </div>
-
-        <div>
-          <label
-            htmlFor="filter-direction"
-            className="mb-1 block text-xs font-medium text-gray-700"
-          >
-            Direction
-          </label>
-          <select
-            id="filter-direction"
-            value={filters.direction ?? "desc"}
-            onChange={(event) => handleDirectionChange(event.target.value)}
-            className="rounded-md border border-gray-300 px-2 py-1.5 text-sm"
-          >
-            <option value="desc">Descending</option>
-            <option value="asc">Ascending</option>
-          </select>
-        </div>
-
         {isAdmin && (
           <button
             type="button"
@@ -178,14 +148,32 @@ export function ProductList({
                 <th scope="col" className="px-4 py-2">
                   Category
                 </th>
-                <th scope="col" className="px-4 py-2">
-                  Price
+                <th scope="col" className="px-4 py-2" aria-sort={ariaSortFor("price")}>
+                  <button
+                    type="button"
+                    onClick={() => handleSort("price")}
+                    className="inline-flex items-center gap-1 uppercase hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 rounded"
+                  >
+                    Price
+                    {sortIndicator("price")}
+                  </button>
                 </th>
                 <th scope="col" className="px-4 py-2">
                   Status
                 </th>
-                <th scope="col" className="px-4 py-2">
-                  Created
+                <th
+                  scope="col"
+                  className="px-4 py-2"
+                  aria-sort={ariaSortFor("createdAt")}
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleSort("createdAt")}
+                    className="inline-flex items-center gap-1 uppercase hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 rounded"
+                  >
+                    Created
+                    {sortIndicator("createdAt")}
+                  </button>
                 </th>
                 {isAdmin && (
                   <th scope="col" className="px-4 py-2 text-right">
