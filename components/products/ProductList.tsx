@@ -66,9 +66,22 @@ export function ProductList({
     return activeDirection === "asc" ? "ascending" : "descending";
   }
 
+  // Sortable columns always show an indicator, even at rest, so a column
+  // reads as sortable before it's ever clicked (standard data-table
+  // pattern) — muted/neutral until active, solid direction arrow once it is.
   function sortIndicator(field: ProductSortField) {
-    if (activeSortField !== field) return null;
-    return <span aria-hidden="true">{activeDirection === "asc" ? "▲" : "▼"}</span>;
+    if (activeSortField !== field) {
+      return (
+        <span aria-hidden="true" className="text-gray-300">
+          ⇅
+        </span>
+      );
+    }
+    return (
+      <span aria-hidden="true" className="text-gray-700">
+        {activeDirection === "asc" ? "▲" : "▼"}
+      </span>
+    );
   }
 
   return (
@@ -152,7 +165,7 @@ export function ProductList({
                   <button
                     type="button"
                     onClick={() => handleSort("price")}
-                    className="inline-flex items-center gap-1 uppercase hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 rounded"
+                    className="-mx-1 inline-flex cursor-pointer items-center gap-1 rounded px-1 py-0.5 uppercase hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
                   >
                     Price
                     {sortIndicator("price")}
@@ -169,7 +182,7 @@ export function ProductList({
                   <button
                     type="button"
                     onClick={() => handleSort("createdAt")}
-                    className="inline-flex items-center gap-1 uppercase hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 rounded"
+                    className="-mx-1 inline-flex cursor-pointer items-center gap-1 rounded px-1 py-0.5 uppercase hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
                   >
                     Created
                     {sortIndicator("createdAt")}
