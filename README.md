@@ -403,6 +403,7 @@ POST   /api/products          create a product                     (admin only)
 GET    /api/products/:id      read one product                     (admin, viewer)
 PUT    /api/products/:id      update a product                     (admin only)
 DELETE /api/products/:id      delete a product                     (admin only)
+GET    /api/products/metrics  total/active count, revenue total    (admin, viewer)
 ```
 
 Role enforcement lives at the route layer, since "who may call this endpoint" is

@@ -186,7 +186,8 @@ entity later (for example `orders`) adds `orderRepository.ts`, `orderService.ts`
 │   ├── api/
 │   │   └── products/
 │   │       ├── route.ts
-│   │       └── [id]/route.ts
+│   │       ├── [id]/route.ts
+│   │       └── metrics/route.ts
 │   ├── layout.tsx
 │   └── page.tsx
 ├── lib/
@@ -234,6 +235,7 @@ File responsibilities (kept out of the tree so lines never wrap):
 - `app/dashboard/page.tsx` — protected page: product list, filter/sort, metrics.
 - `app/api/products/route.ts` — GET (list), POST (create).
 - `app/api/products/[id]/route.ts` — GET (one), PUT, DELETE.
+- `app/api/products/metrics/route.ts` — GET, dashboard totals computed server-side over the full collection.
 - `app/page.tsx` — landing / redirect by auth state.
 - `lib/firebase/client.ts` — client SDK init (browser).
 - `lib/firebase/admin.ts` — Admin SDK init (server only).
@@ -299,7 +301,9 @@ form for inline feedback, but that is UX only and never replaces the server chec
   reflect the entire catalog and are independent of the list's active filters.
   Revenue total sums the price of active products only (a proxy for sellable
   catalog value, since there is no sales/order data to compute true revenue from —
-  see the README's Summary metrics section).
+  see the README's Summary metrics section). Served by a dedicated endpoint,
+  `GET /api/products/metrics`, which computes all three server-side over the full
+  collection rather than the client deriving them from a fetched product list.
 - Clean, usable UI. Functional over decorative.
 
 ### 2.4 Database design
@@ -388,11 +392,12 @@ explicit and prevents leaking the Admin SDK into the browser.
 
 **Endpoints and required roles**
 ```
-GET    /api/products        list (filter/sort via query params)   admin, viewer
-POST   /api/products        create                                admin only
-GET    /api/products/:id    read one                              admin, viewer
-PUT    /api/products/:id    update                                admin only
-DELETE /api/products/:id    delete                                admin only
+GET    /api/products         list (filter/sort via query params)   admin, viewer
+POST   /api/products         create                                admin only
+GET    /api/products/:id     read one                              admin, viewer
+PUT    /api/products/:id     update                                admin only
+DELETE /api/products/:id     delete                                admin only
+GET    /api/products/metrics total/active count, revenue total     admin, viewer
 ```
 
 **Errors — `lib/errors/index.ts`**
