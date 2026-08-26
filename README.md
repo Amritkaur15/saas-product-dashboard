@@ -60,9 +60,14 @@ If you do not already have a Firebase project for this app:
    ```bash
    cp .env.example .env.local
    ```
-   Use the client web config for the `NEXT_PUBLIC_*` values, and the service account
-   JSON for the server value. The service account is used only by the Admin SDK on
-   the server and must never be committed.
+   Use the client web config for the `NEXT_PUBLIC_*` values. For the Admin SDK, open
+   the downloaded service account JSON and copy three fields into their own
+   variables: `project_id` -> `FIREBASE_ADMIN_PROJECT_ID`, `client_email` ->
+   `FIREBASE_ADMIN_CLIENT_EMAIL`, `private_key` -> `FIREBASE_ADMIN_PRIVATE_KEY`
+   (keep its `\n` escapes as-is; they're restored to real newlines at runtime).
+   These three values are used only by the Admin SDK on the server and must never
+   be committed. The JSON file itself is not read directly and must never be
+   committed either.
 3. Start the app and sign up once through the UI:
    ```bash
    npm run dev
@@ -301,6 +306,10 @@ scanning documents. Results are paginated to keep the returned set small.
 The metrics (total products, active count, revenue total) are computed by reading
 the products collection directly. At this scale that is simple and correct.
 
+The metrics reflect the entire catalog and are independent of the dashboard's list
+filters — the dashboard fetches an unfiltered product list for the metrics bar,
+separately from the (possibly filtered) list it passes to the product table.
+
 At 10x or 100x the data this would not hold, because Firestore bills per document
 read and reading every product per dashboard load becomes slow and costly. The
 scaling path is a precomputed aggregate: a single `stats/products` document holding
@@ -368,9 +377,30 @@ DELETE /api/products/:id      delete a product                     (admin only)
 ```
 
 Role enforcement lives at the route layer, since "who may call this endpoint" is
-an HTTP concern, while "what makes a product valid" lives in the service. Because
-Firestore is isolated in the repository, services are testable by injecting a fake
-repository, with no real database required.
+an HTTP concern, while "what makes a product valid" lives in the service.
+
+---
+
+## Testing
+
+The code is structured to be testable: Firestore access is isolated in the
+repository layer, so services can be unit tested by injecting a fake repository,
+with no real database involved.
+
+No test suite is included in this submission. Tests are a bonus here, not a core
+requirement, so the time went into the core features and clear documentation
+instead.
+
+With more time I would add:
+
+- Service-level tests for business rules and validation (for example, `createProduct`
+  defaulting status to `active`, `updateProduct` throwing `NotFoundError` for a
+  missing id).
+- Route-level tests for auth and status codes (401 with no token, 403 for a viewer
+  attempting a write, 404 for a missing product).
+- Component tests for UI rendering and role-based controls (admin sees edit/delete,
+  viewer does not).
+- A small CI workflow that lints and runs the tests on every push.
 
 ---
 
@@ -414,9 +444,7 @@ repository, with no real database required.
 3. An AI feature (auto generated product descriptions or natural language search),
    productionized with server side rate limiting and input validation.
 4. Basic observability: structured API logging and error tracking.
-5. Full test coverage across the repository, route, and component layers, beyond
-   the representative service tests included here.
-6. A small CI workflow that lints and runs the tests.
+5. A test suite and CI workflow, described in the Testing section above.
 
 ---
 

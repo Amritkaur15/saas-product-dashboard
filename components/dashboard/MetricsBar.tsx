@@ -9,9 +9,9 @@ interface MetricsBarProps {
   products: Product[];
 }
 
-// Metrics summarize the currently filtered/sorted list, not the whole
-// collection — there is no separate aggregate fetch (out of scope, see
-// README), so "total" here means "total in view".
+// Metrics summarize the whole catalog, independent of the list's active
+// filters. The caller passes an unfiltered product list for this reason —
+// see app/dashboard/page.tsx.
 export function MetricsBar({ products }: MetricsBarProps) {
   const total = products.length;
   const activeCount = products.filter((p) => p.status === "active").length;

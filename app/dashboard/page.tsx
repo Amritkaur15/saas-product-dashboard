@@ -28,6 +28,11 @@ export default function DashboardPage() {
     deleteProduct,
   } = useProducts(filters);
 
+  // Metrics summarize the whole catalog, independent of the list's active
+  // filters, so they're backed by their own unfiltered fetch rather than
+  // the (possibly filtered) `products` above.
+  const { products: allProducts, refresh: refreshMetrics } = useProducts();
+
   useEffect(() => {
     if (authLoading) return;
     if (!user) router.replace("/login");
@@ -60,6 +65,7 @@ export default function DashboardPage() {
     } else {
       await createProduct(input);
     }
+    await refreshMetrics();
     closeForm();
   }
 
@@ -68,6 +74,7 @@ export default function DashboardPage() {
       return;
     }
     await deleteProduct(product.id);
+    await refreshMetrics();
   }
 
   async function handleLogout() {
@@ -93,7 +100,7 @@ export default function DashboardPage() {
         </button>
       </header>
 
-      <MetricsBar products={products} />
+      <MetricsBar products={allProducts} />
 
       {formOpen && isAdmin && (
         <ProductForm product={editingProduct} onSubmit={handleFormSubmit} onCancel={closeForm} />

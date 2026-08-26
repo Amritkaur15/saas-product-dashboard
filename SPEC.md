@@ -47,7 +47,7 @@ review and a commit before continuing. Do not jump ahead.
 9. Auth pages (login/signup).
 10. Dashboard + components (list, filter/sort, metrics, role-based UI).
 11. Security rules + indexes.
-12. Tests (representative service tests).
+12. Testing approach documented in the README (no test suite built; see section 9a).
 13. README.
 
 Commit at each boundary with a clear message (for example `feat: add product
@@ -286,8 +286,13 @@ form for inline feedback, but that is UX only and never replaces the server chec
 
 ### 2.3 Dashboard and data display
 - Responsive dashboard page listing products.
-- Filter (by status and by category) and sort (by at least name, price, createdAt).
-- At least two summary metrics: total products, active count, revenue total.
+- Filter (by status and by category) and sort (by at least price and createdAt).
+  The API and `ProductSortField` type also allow sorting by name; the dashboard UI
+  intentionally exposes only price and createdAt, to keep the composite index set
+  small and deliberate rather than indexing every field speculatively (see the
+  README's Indexing strategy section).
+- At least two summary metrics: total products, active count, revenue total. These
+  reflect the entire catalog and are independent of the list's active filters.
 - Clean, usable UI. Functional over decorative.
 
 ### 2.4 Database design
@@ -390,9 +395,13 @@ DELETE /api/products/:id    delete                                admin only
 - `firestore.rules`: authenticated reads for signed in users; writes to `products`
   only when the token's role claim is `admin`. Rules are a backstop; the API is the
   primary gate. Write rules that reference `request.auth.token.role`.
-- `firestore.indexes.json`: include a composite index only if the dashboard
-  combines a filter and a sort on different fields (for example `status` + `price`).
-  If queries stay single field, leave indexes empty and note it.
+- `firestore.indexes.json`: the dashboard's status and category filters are
+  independent and combinable, and each can pair with a sort on `price` or
+  `createdAt` in either direction. Firestore requires a composite index for every
+  equality-filter-plus-sort combination, and a separate index per sort direction
+  (composite indexes, unlike single-field indexes, don't serve both directions from
+  one entry). `firestore.indexes.json` defines one index per reachable combination
+  — see the README's Indexing strategy section for the full set and rationale.
 
 ---
 
@@ -441,8 +450,10 @@ brackets) is a dynamic URL segment read via the handler's `params`.
   `{ role: "admin" }`, and syncs the `users/{uid}.role` field. Exposed as
   `npm run set-admin -- <email>`.
 - `lib/firebase/client.ts`: client SDK init from public env vars.
-- `lib/firebase/admin.ts`: Admin SDK init from the service account env var. Server
-  only. Guard against re-initialization in dev hot reload.
+- `lib/firebase/admin.ts`: Admin SDK init from three service account env vars
+  (`FIREBASE_ADMIN_PROJECT_ID`, `FIREBASE_ADMIN_CLIENT_EMAIL`,
+  `FIREBASE_ADMIN_PRIVATE_KEY`), copied out of the downloaded JSON rather than the
+  JSON file itself. Server only. Guard against re-initialization in dev hot reload.
 - `.env.example`: document every required env var. `.env.local` is gitignored.
 
 ---
@@ -451,8 +462,6 @@ brackets) is a dynamic URL segment read via the handler's `params`.
 
 Required: `next`, `react`, `react-dom`, `firebase`, `firebase-admin`, `zod`,
 `tailwindcss`, `typescript`, and type packages.
-
-Optional (only if adding tests): `vitest` and its companions.
 
 Do not add: any state management library (use React state + hooks), any ORM, any UI
 component kit, any auth library beyond the Firebase SDKs, CQRS/event libraries. If
@@ -479,20 +488,19 @@ with a one line note on how it would slot into the existing layers.
 ## 9a. Testing approach
 
 Tests are NOT required by the assignment (only a bonus CI workflow references running
-them). The priority is testable structure, not coverage.
+them). The priority is testable structure, not coverage. No test suite is built for
+this submission — core features and documentation are prioritized within the
+timeline, and this is documented in the README rather than implemented.
 
 - The code must be structured to be testable. Because Firestore is isolated in the
   repository, services can be tested by injecting a fake repository with no real
-  database. This costs nothing and is the main signal.
-- Write two or three representative service-level tests to prove the seams work, for
-  example: `createProduct` defaults status to `active`; `updateProduct` throws
-  `NotFoundError` for a missing id. Do not build a full suite.
-- Use `vitest` if adding tests (light, fast, TS-friendly). Co-locate as
-  `productService.test.ts` next to the file, or a top-level `tests/` mirror.
-- If time is short, skip the tests and instead document the plan in the README: what
-  you would test at the repository, route, and component layers, and that CI would
-  run them. Either path (a couple of tests, or a documented plan) is acceptable; a
-  full suite is out of scope for the timeline.
+  database. This costs nothing and is the main signal, and it holds whether or not a
+  test suite is actually written.
+- The README documents, rather than implements, what testing would look like with
+  more time: service-level tests (business rules, validation), route-level tests
+  (auth and status codes), component tests (rendering, role-based controls), and a
+  small CI workflow to run them on every push.
+- Do not add `vitest` or any other test dependency for this build.
 
 ---
 
