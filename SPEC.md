@@ -297,6 +297,9 @@ form for inline feedback, but that is UX only and never replaces the server chec
   README's Indexing strategy section).
 - At least two summary metrics: total products, active count, revenue total. These
   reflect the entire catalog and are independent of the list's active filters.
+  Revenue total sums the price of active products only (a proxy for sellable
+  catalog value, since there is no sales/order data to compute true revenue from —
+  see the README's Summary metrics section).
 - Clean, usable UI. Functional over decorative.
 
 ### 2.4 Database design

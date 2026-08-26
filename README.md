@@ -323,21 +323,30 @@ scaling path once that stops being true.
 
 **Summary metrics**
 
-The metrics (total products, active count, revenue total) are computed by reading
-the products collection directly. At this scale that is simple and correct.
+The metrics (total products, active count, revenue total) are computed server-side
+by `GET /api/products/metrics`, which reads the products collection directly and
+reduces over it. At this scale that is simple and correct.
 
 The metrics reflect the entire catalog and are independent of the dashboard's list
-filters — the dashboard fetches an unfiltered product list for the metrics bar,
-separately from the (possibly filtered) list it passes to the product table.
+filters — the metrics endpoint always reads the full, unfiltered collection,
+separately from the (possibly filtered) request the product table makes.
+
+Revenue total sums the price of active products only, not all products. This app
+has no sales or order data (units sold), so there is no true revenue figure to
+compute; the metric is a proxy for sellable catalog value / revenue potential
+instead. Inactive products aren't sellable, so summing only active prices avoids
+overstating that potential — an inactive product's price shouldn't count toward
+what the catalog could actually earn.
 
 At 10x or 100x the data this would not hold, because Firestore bills per document
-read and reading every product per dashboard load becomes slow and costly. The
-scaling path is a precomputed aggregate: a single `stats/products` document holding
-`{ total, activeCount, revenueTotal }`, updated on every product write inside a
-transaction so the counters never drift. The dashboard would then read one
-document instead of the whole collection. The trade-off is added write complexity,
-and an asynchronous updater (a Cloud Function) would make the totals eventually
-consistent. This was not built, since it is unnecessary at the current scale.
+read and reading every product on every metrics request becomes slow and costly.
+The scaling path is a precomputed aggregate: a single `stats/products` document
+holding `{ total, activeCount, revenueTotal }`, updated on every product write
+inside a transaction so the counters never drift. The metrics endpoint would then
+read one document instead of the whole collection. The trade-off is added write
+complexity, and an asynchronous updater (a Cloud Function) would make the totals
+eventually consistent. This was not built, since it is unnecessary at the current
+scale.
 
 **Pagination**
 

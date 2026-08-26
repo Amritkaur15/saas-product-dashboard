@@ -18,12 +18,19 @@ export async function listProducts(filters: ProductFilters): Promise<Product[]> 
 // Global catalog totals, independent of any list filter. Reuses the same
 // unfiltered read findAll({}) already provides rather than adding a
 // dedicated repository method.
+//
+// revenueTotal sums only active products' prices. There's no sales/order
+// data in this app, so "revenue" here is a proxy for sellable catalog
+// value, not realized revenue — inactive products aren't sellable, so
+// including them would overstate it. See the README's Summary metrics
+// section.
 export async function getMetrics(): Promise<ProductMetrics> {
   const products = await productRepository.findAll({});
+  const activeProducts = products.filter((p) => p.status === "active");
   return {
     total: products.length,
-    activeCount: products.filter((p) => p.status === "active").length,
-    revenueTotal: products.reduce((sum, p) => sum + p.price, 0),
+    activeCount: activeProducts.length,
+    revenueTotal: activeProducts.reduce((sum, p) => sum + p.price, 0),
   };
 }
 
