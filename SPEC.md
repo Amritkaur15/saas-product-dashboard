@@ -495,7 +495,11 @@ These are future extensions. Leave clean seams (as described) but do NOT impleme
   memberships collection).
 - Precomputed metrics aggregate (`stats/products` transactional counter).
 - Cursor based pagination and search.
-- AI feature (product description generation or natural language search).
+- AI feature: primarily natural language search (translating a plain-English
+  query into the structured filters `GET /api/products` already supports), with
+  category suggestion (inferring category from name) as a smaller optional
+  addition. Not product description generation — there is no description field
+  on the product model.
 - CI/CD workflow and observability tooling.
 - Product ownership / `createdBy`.
 - A managed `categories` collection (admin-editable categories with metadata like

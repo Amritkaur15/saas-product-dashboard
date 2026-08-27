@@ -482,8 +482,12 @@ With more time I would add:
 
 1. Cursor based pagination and search on the product list.
 2. A precomputed metrics aggregate updated transactionally on write.
-3. An AI feature (auto generated product descriptions or natural language search),
-   productionized with server side rate limiting and input validation.
+3. An AI feature, primarily natural language search: translating a plain-English
+   query like "active electronics under $500" into the structured filters
+   `GET /api/products` already supports. Category suggestion (inferring a
+   product's category from its name) is a smaller optional addition on top. Both
+   would need to be productionized safely — the AI call server-side, behind the
+   existing auth gate, with rate limiting and input validation.
 4. Basic observability: structured API logging and error tracking.
 5. A test suite and CI workflow, described in the Testing section above.
 
