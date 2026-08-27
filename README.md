@@ -15,8 +15,7 @@ not built fully is explained below.
 
 - **Locally:** follow the Setup section below (about 5 minutes). This is the primary
   way to run the project.
-- **Hosted demo:** _(optional — add a Vercel URL here if deployed, otherwise remove
-  this line.)_
+- **Hosted demo:** [saas-product-dashboard-eight.vercel.app](https://saas-product-dashboard-eight.vercel.app)
 
 ---
 
