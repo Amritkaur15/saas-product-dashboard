@@ -1,7 +1,12 @@
 "use client";
 
+import type {
+  Product,
+  ProductCategory,
+  ProductInput,
+  ProductStatus,
+} from "@/types/product";
 import { PRODUCT_CATEGORIES } from "@/types/product";
-import type { Product, ProductCategory, ProductInput, ProductStatus } from "@/types/product";
 import { useState } from "react";
 
 interface ProductFormProps {
@@ -73,7 +78,9 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
           <select
             id="product-category"
             value={category}
-            onChange={(event) => setCategory(event.target.value as ProductCategory)}
+            onChange={(event) =>
+              setCategory(event.target.value as ProductCategory)
+            }
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
             {PRODUCT_CATEGORIES.map((option) => (
@@ -94,7 +101,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
           <input
             id="product-price"
             type="number"
-            min="0"
+            min="0.01"
             step="0.01"
             required
             value={price}
