@@ -466,6 +466,15 @@ With more time I would add:
 - Categories are a fixed hardcoded list, not free text or a managed collection.
   Prevents inconsistent values and keeps filtering reliable; see Database design's
   Categories section above for the escalation path.
+- The dashboard renders client-side: data loads after first paint, so there's a
+  brief loading state (a placeholder, not misleading zeros) rather than
+  server-rendered HTML with data already in it. This fits an authenticated,
+  logged-in, interactive dashboard with no SEO need; server-side rendering matters
+  most for public, SEO-relevant pages. Server Components would remove that initial
+  loading state, but would require moving auth from the current client-token-in-
+  header model to server-side sessions and splitting the dashboard into
+  server/client components — noted as a refinement if first-paint performance
+  becomes a priority.
 
 ---
 
